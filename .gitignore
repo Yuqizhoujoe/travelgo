@@ -45,9 +45,6 @@ vendor/
 *.sublime-project
 *.sublime-workspace
 
-# MacOS files
-.DS_Store
-
 # Log files
 *.log
 
@@ -56,13 +53,6 @@ node_modules/
 
 # Firebase service account key (update the name if different)
 firebase-adminsdk.json
-
-# Example additional ignores for specific tools and frameworks:
-# IntelliJ
-.idea/
-
-# VScode
-.vscode/
 
 # LiteIDE project files
 .liteide/
@@ -87,18 +77,9 @@ Gopkg.toml
 # GoReleaser config
 dist/
 
-# Test result files
-*.test
-
 # Terraform state
 *.tfstate
 *.tfstate.backup
-
-# Ignore JetBrains Rider project files
-.idea/
-
-# Ignore the GoLand .idea folder
-.idea/
 
 # Ignore MacOS-specific file
 .DS_Store
