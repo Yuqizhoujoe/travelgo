@@ -1,0 +1,104 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Directories
+_build/
+bin/
+gen/
+tmp/
+
+# Go workspace file
+go.work
+
+# Go modules
+go.mod
+go.sum
+
+# Go test binary, coverage files, and results
+*.test
+*.coverprofile
+*.cover.out
+coverage/
+
+# Dependency directories (vendor/)
+vendor/
+
+# Environment variables file
+.env
+
+# IDEs and editors
+# JetBrains IDEs
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# MacOS files
+.DS_Store
+
+# Log files
+*.log
+
+# Node modules (if you have a frontend)
+node_modules/
+
+# Firebase service account key (update the name if different)
+firebase-adminsdk.json
+
+# Example additional ignores for specific tools and frameworks:
+# IntelliJ
+.idea/
+
+# VScode
+.vscode/
+
+# LiteIDE project files
+.liteide/
+
+# WebStorm
+.webstorm/
+
+# Goland
+.goland/
+
+# Glide dependency manager
+glide.lock
+glide.yaml
+
+# Godep dependency manager
+Godeps/
+
+# Dep dependency manager
+Gopkg.lock
+Gopkg.toml
+
+# GoReleaser config
+dist/
+
+# Test result files
+*.test
+
+# Terraform state
+*.tfstate
+*.tfstate.backup
+
+# Ignore JetBrains Rider project files
+.idea/
+
+# Ignore the GoLand .idea folder
+.idea/
+
+# Ignore MacOS-specific file
+.DS_Store
