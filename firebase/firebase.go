@@ -1,8 +1,11 @@
 package firebase
 
+// https://github.com/firebase/firebase-admin-go
+
 import (
 	"context"
 	"log"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -18,7 +21,8 @@ var StorageClient *storage.Client
 
 func InitFirebase() {
 	ctx := context.Background()
-	sa := option.WithCredentialsFile("../firebase-adminsdk.json")
+
+	sa := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Fatalf("error initializing app: %v\n", err)
