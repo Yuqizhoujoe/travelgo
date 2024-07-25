@@ -5,48 +5,52 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"time"
 	"travelgo/firebase"
 
 	"firebase.google.com/go/storage"
+
+	CloudStorage "cloud.google.com/go/storage"
 	"github.com/google/uuid"
 )
 
 type StorageService struct {
-	bucketName string
-	client     *storage.Client
+	client *storage.Client
 }
 
 func NewStorageService() StorageService {
 	return StorageService{
-		bucketName: "firebase-bucket",
-		client:     firebase.StorageClient,
+		client: firebase.StorageClient,
 	}
 }
 
-func (ss *StorageService) UploadFile(file *multipart.FileHeader) (string, error) {
+func (ss *StorageService) UploadFile(file multipart.File, header *multipart.FileHeader) (string, error) {
+	defer file.Close()
+
+	// Create a context
 	ctx := context.Background()
 
+	// Create a bucket handle
 	bucket, err := ss.client.DefaultBucket()
 	if err != nil {
 		return "", fmt.Errorf("failed to get default bucket: %v", err)
 	}
 
+	// Create file metadata
 	fileID := uuid.New().String()
-	fileName := fmt.Sprintf("%s/%s", fileID, file.Filename)
+	fileName := fmt.Sprintf("%s/%s", fileID, header.Filename)
 
-	wc := bucket.Object(fileName).NewWriter(ctx)
-	wc.ContentType = file.Header.Get("Content-Type")
-	wc.Metadata = map[string]string{
-		"firebaseStorageDownloadTokens": uuid.New().String(),
-	}
+	// Create file handle
+	object := bucket.Object(fileName)
 
-	fileHandle, err := file.Open()
-	if err != nil {
-		return "", err
-	}
-	defer fileHandle.Close()
+	// Upload the file
+	wc := object.NewWriter(ctx)
+	// wc.ContentType = file.Header.Get("Content-Type")
+	// wc.Metadata = map[string]string{
+	// 	"firebaseStorageDownloadTokens": uuid.New().String(),
+	// }
 
-	if _, err = io.Copy(wc, fileHandle); err != nil {
+	if _, err = io.Copy(wc, file); err != nil {
 		return "", err
 	}
 
@@ -54,6 +58,15 @@ func (ss *StorageService) UploadFile(file *multipart.FileHeader) (string, error)
 		return "", err
 	}
 
-	downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media", ss.bucketName, fileName)
-	return downloadURL, nil
+	// Get the public URL of the uploaded file
+	opts := &CloudStorage.SignedURLOptions{
+		Method:  "GET",
+		Expires: time.Now().Add(time.Hour),
+	}
+	url, err := bucket.SignedURL(fileName, opts)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

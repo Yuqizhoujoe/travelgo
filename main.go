@@ -29,5 +29,5 @@ func main() {
 	r.GET("/travel/posts", postController.GetPosts)
 	r.GET("/travel/posts/:id", postController.GetPost)
 
-	r.Run(":8080")
+	r.Run(":8081")
 }

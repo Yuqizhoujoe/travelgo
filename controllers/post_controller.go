@@ -21,13 +21,13 @@ func NewPostController() *PostController {
 }
 
 func (pc *PostController) UploadFile(c *gin.Context) {
-	file, err := c.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	link, err := pc.storageService.UploadFile(file)
+	link, err := pc.storageService.UploadFile(file, header)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -43,12 +43,28 @@ func (pc *PostController) CreatePost(c *gin.Context) {
 		return
 	}
 
-	if err := pc.postService.CreatePost(postContent); err != nil {
+	// Handle file upload
+	file, header, err := c.Request.FormFile("postThumbnail")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to uplaod thumbnail"})
+		return
+	}
+
+	// Call storage service to upload file and get the URL
+	gcsURL, err := pc.storageService.UploadFile(file, header)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true})
+	// Call postService.CreatePost with uploaded file
+	postID, err := pc.postService.CreatePost(postContent, gcsURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": true, "postID": postID})
 }
 
 func (pc *PostController) GetPosts(c *gin.Context) {
