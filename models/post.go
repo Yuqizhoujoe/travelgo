@@ -10,7 +10,6 @@ type Post struct {
 }
 
 type PostUploadContent struct {
-	PostTitle     string `json:"postTitle"`
-	PostThumbnail string `json:"postThumbnail"`
-	Content       string `json:"content"`
+	PostTitle string `json:"postTitle"`
+	Content   string `json:"content"`
 }

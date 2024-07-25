@@ -16,7 +16,7 @@ func NewPostService() PostService {
 	return PostService{}
 }
 
-func (ps *PostService) CreatePost(content models.PostUploadContent) error {
+func (ps *PostService) CreatePost(content models.PostUploadContent, gcsURL string) (postID string, err error) {
 	ctx := context.Background()
 
 	// generate new document reference with an auto-generated ID
@@ -25,14 +25,15 @@ func (ps *PostService) CreatePost(content models.PostUploadContent) error {
 	newPost := models.Post{
 		PostID:        docRef.ID,
 		PostTitle:     content.PostTitle,
-		PostThumbnail: content.PostThumbnail,
+		PostThumbnail: gcsURL,
 		PostLink:      "https://platform.com/posts/" + docRef.ID,
 		PostContent:   content.Content,
 		Timestamp:     time.Now().Format(time.RFC3339),
 	}
 
-	_, err := docRef.Set(ctx, newPost)
-	return err
+	_, err = docRef.Set(ctx, newPost)
+
+	return newPost.PostID, err
 }
 
 func (ps *PostService) GetPosts() ([]models.Post, error) {
