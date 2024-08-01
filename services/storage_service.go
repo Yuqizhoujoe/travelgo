@@ -11,7 +11,6 @@ import (
 	"firebase.google.com/go/storage"
 
 	CloudStorage "cloud.google.com/go/storage"
-	"github.com/google/uuid"
 )
 
 type StorageService struct {
@@ -36,12 +35,8 @@ func (ss *StorageService) UploadFile(file multipart.File, header *multipart.File
 		return "", fmt.Errorf("failed to get default bucket: %v", err)
 	}
 
-	// Create file metadata
-	fileID := uuid.New().String()
-	fileName := fmt.Sprintf("%s/%s", fileID, header.Filename)
-
 	// Create file handle
-	object := bucket.Object(fileName)
+	object := bucket.Object(header.Filename)
 
 	// Upload the file
 	wc := object.NewWriter(ctx)
@@ -61,9 +56,10 @@ func (ss *StorageService) UploadFile(file multipart.File, header *multipart.File
 	// Get the public URL of the uploaded file
 	opts := &CloudStorage.SignedURLOptions{
 		Method:  "GET",
-		Expires: time.Now().Add(time.Hour),
+		Expires: time.Now().AddDate(1, 0, 0), // expires in 1 year
 	}
-	url, err := bucket.SignedURL(fileName, opts)
+
+	url, err := bucket.SignedURL(header.Filename, opts)
 	if err != nil {
 		return "", err
 	}
