@@ -31,6 +31,7 @@ func (ps *PostService) CreatePost(content models.PostUploadContent) (postID stri
 		// PostLink:  "https://platform.com/posts/" + docRef.ID,
 		EditorJsData: content.EditorJsData,
 		Timestamp:    time.Now().Format(time.RFC3339),
+		RoomID:       content.RoomID,
 	}
 
 	fmt.Println("Post Service")
