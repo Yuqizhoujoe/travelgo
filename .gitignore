@@ -83,3 +83,7 @@ dist/
 
 # Ignore MacOS-specific file
 .DS_Store
+/api-docs.html
+/gin-bin
+/Ginfile
+/travelgo
