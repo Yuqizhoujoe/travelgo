@@ -3,6 +3,7 @@ package grpc_client
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	pb "github.com/Yuqizhoujoe/user-service-proto/proto"
@@ -20,13 +21,18 @@ func InitGRPCClient() (pb.UserServiceClient, error) {
 		return client, nil
 	}
 
+	grpcServerURL := os.Getenv("GRPC_SERVER_URL")
+	if grpcServerURL == "" {
+		return nil, fmt.Errorf("GRPC_SERVER_URL environment variable not set")
+	}
+
 	// create a context with a timeout for the connection attempt
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	// establish gRPC connection to the UserService using grpc.WithTransportCredentials(insecure.NewCredentials())
+	// establish gRPC connection to the UserService
 	var err error
-	conn, err = grpc.DialContext(ctx, "localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err = grpc.DialContext(ctx, grpcServerURL, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to UserService: %v", err)
 	}

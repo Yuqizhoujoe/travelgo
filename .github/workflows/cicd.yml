@@ -1,4 +1,4 @@
-name: Go CI/CD and Deploy
+name: TravelGo CI/CD
 
 on:
   push:
@@ -11,18 +11,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    environment: DEV # Specify the environment to access the correct secrets
-
-    services:
-      grpc-server:
-        image: grpc/go:1.39
-        ports:
-          - 50051:50051
-        options: >-
-          --health-cmd="grpc_health_probe -addr=localhost:50051"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+    environment: DEV # Specify the DEV environment
 
     steps:
       - name: Checkout code
@@ -34,48 +23,66 @@ jobs:
           go-version: "1.21"
 
       - name: Set up Firebase credentials
-        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > $HOME/firebase-creds.json
+        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/firebase-creds.json
 
       - name: Install dependencies
         run: go mod tidy
 
-      - name: Build
-        run: go build -v ./...
+      - name: Set gRPC server URL
+        run: echo "GRPC_SERVER_URL=${{ secrets.GRPC_SERVER_URL }}" >> $GITHUB_ENV
+
+      - name: Build the service
+        run: go build -v -o travelgo .
 
       - name: Run tests
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-creds.json
-          GRPC_SERVER_ADDRESS: ${{ secrets.GRPC_SERVER_ADDRESS }}
-        run: |
-          go test -v ./...
+          GRPC_SERVER_URL: ${{ secrets.GRPC_SERVER_URL }}
+        run: go test -v ./...
 
       - name: Lint code
         run: golangci-lint run
 
-      - name: Run gRPC connection tests
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Google Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Build and push Docker image
+        run: |
+          docker buildx build --platform linux/amd64 -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/travelgo:latest --push .
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: DEV # Specify the DEV environment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Firebase credentials
+        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/firebase-creds.json
+
+      - name: Install Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
+
+      - name: Deploy to Google Cloud Run
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-creds.json
-          GRPC_SERVER_ADDRESS: ${{ secrets.GRPC_SERVER_ADDRESS }}
         run: |
-          go test -v ./path/to/grpc_client_test.go  # Adjust this path to where your gRPC client tests are located
-
-  # deploy:
-  #   needs: build-and-test
-  #   runs-on: ubuntu-latest
-  #   environment: DEV # Specify the environment to access the correct secrets
-
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v3
-
-  #     - name: Set up Firebase credentials
-  #       run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > $HOME/firebase-creds.json
-
-  #     - name: Install Firebase CLI
-  #       run: curl -sL https://firebase.tools | bash
-
-  #     - name: Deploy to Firebase
-  #       env:
-  #         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-  #       run: |
-  #         firebase deploy --only hosting
+          gcloud run deploy travelgo \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/travelgo:latest \
+            --platform managed \
+            --region ${{ secrets.GCP_REGION }} \
+            --port 8080 \
+            --allow-unauthenticated
